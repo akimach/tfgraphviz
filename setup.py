@@ -7,14 +7,14 @@ except ImportError:
     print("Please install setuptools.")
 
 import os
-long_description = 'Simple graphviz wrapper to visualize a graph like TensorBoard'
+long_description = 'A simple graphviz wrapper to visualize a graph like TensorBoard'
 if os.path.exists('README.rst'):
     long_description = open('README.rst').read()
 
 setup(
     name  = 'tfgraphviz',
-    version = '0.0.0',
-    description = 'Simple graphviz wrapper to visualize a graph like TensorBoard',
+    version = '0.0.2',
+    description = 'A simple graphviz wrapper to visualize a graph like TensorBoard',
     long_description = long_description,
     license = 'MIT',
     author = 'akimacho',

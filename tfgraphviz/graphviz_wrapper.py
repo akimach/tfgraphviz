@@ -4,28 +4,53 @@ import uuid
 import tensorflow as tf
 import graphviz as gv
 
-def tf_digraph(name=None, name_scope=None):
-    if name != None:
-        g = gv.Digraph(name=name)
+
+graph_pref = {
+    'fontcolor': '#414141',
+    'style': 'rounded',
+}
+
+name_scope_graph_pref = {
+    'bgcolor': '#eeeeee',
+    'color': '#aaaaaa',
+    'penwidth': '2',
+}
+
+non_name_scope_graph_pref = {
+    'fillcolor':  'white',
+    'color': 'white',
+}
+
+node_pref = {
+    'style': 'filled',
+    'fillcolor': 'white',
+    'color': '#aaaaaa',
+    'penwidth': '2',
+    'fontcolor': '#414141',
+}
+
+edge_pref = {
+    'color': '#aaaaaa',
+    'arrowsize': '1.2',
+    'penwidth': '2.5',
+}
+
+
+def tf_digraph(name=None, name_scope=None, style=True):
+    g = gv.Digraph(name=name)
     if name_scope:
-        g.graph_attr["label"] = name_scope
-        g.graph_attr["bgcolor"] = "#eeeeee"
-        g.graph_attr["color"] = "#aaaaaa"
-        g.graph_attr["penwidth"] = "2"
+        g.graph_attr['label'] = name_scope
+    if style is False: return g
+
+    if name_scope:
+        g.graph_attr.update(name_scope_graph_pref)
     else:
-        g.graph_attr["fillcolor"] = "white"
-        g.graph_attr["color"] = "white"
-    g.graph_attr["fontcolor"] = "#414141"
-    g.graph_attr["style"] = "rounded"
-    g.node_attr["style"] = "filled"
-    g.node_attr["fillcolor"] = "white"
-    g.node_attr["color"] = "#aaaaaa"
-    g.node_attr["penwidth"] = "2"
-    g.node_attr["fontcolor"] = "#414141"
-    g.edge_attr["color"] = "#aaaaaa"
-    g.edge_attr["arrowsize"] = "1.2"
-    g.edge_attr["penwidth"] = "2.5"
+        g.graph_attr.update(non_name_scope_graph_pref)
+    g.graph_attr.update(graph_pref)
+    g.node_attr.update(node_pref)
+    g.edge_attr.update(edge_pref)
     return g
+
 
 def nested_dict(dict_, keys, val):
     cloned = dict_.copy()
@@ -39,9 +64,11 @@ def nested_dict(dict_, keys, val):
     dd[last_key] = val
     return cloned
 
+
 def node_abs_paths(op):
     node_names = op.name.split('/')
     return ['/'.join(node_names[0:i+1]) for i in range(len(node_names))]
+
 
 def node_table(graph, depth=1):
     table = {}
@@ -58,6 +85,7 @@ def node_table(graph, depth=1):
             else:
                 table = nested_dict(table, ps, {})
     return table
+
 
 def node_input_table(graph, depth=1):
     table = {}
@@ -76,27 +104,20 @@ def node_input_table(graph, depth=1):
         table[opn] = list(set(t_l))
     return table
 
-def add_edges(node_inpt_table, g):
-    for node, node_inputs in node_inpt_table.items():
-        if re.match(r"\^", node): continue
-        for ni in node_inputs:
-            if ni == node: continue
-            if re.match(r"\^", ni): continue
-            g.edge(ni, node)
-    return g
-
+# cluster index of subgraph
 CLUSTER_INDEX = 0
 
-def add_nodes(node_table, name=None, name_scope=None):
+
+def add_nodes(node_table, name=None, name_scope=None, style=True):
     global CLUSTER_INDEX
     if name:
-        g = tf_digraph(name=name, name_scope=name_scope)
+        g = tf_digraph(name=name, name_scope=name_scope, style=style)
     else:
-        g = tf_digraph(name=str(uuid.uuid4().get_hex().upper()[0:6]), name_scope=name_scope)
+        g = tf_digraph(name=str(uuid.uuid4().get_hex().upper()[0:6]), name_scope=name_scope, style=style)
     graphs = []
     for key, value in node_table.items():
         if len(value) > 0:
-            sg = add_nodes(value, name="cluster_%i" % CLUSTER_INDEX, name_scope=key.split('/')[-1])
+            sg = add_nodes(value, name='cluster_%i' % CLUSTER_INDEX, name_scope=key.split('/')[-1], style=style)
             sg.node(key, key.split('/')[-1])
             CLUSTER_INDEX += 1
             graphs.append(sg)
@@ -106,11 +127,22 @@ def add_nodes(node_table, name=None, name_scope=None):
         g.subgraph(tg)
     return g
 
-def board(tfgraph, depth=1):
+
+def add_edges(node_inpt_table, g):
+    for node, node_inputs in node_inpt_table.items():
+        if re.match(r"\^", node): continue
+        for ni in node_inputs:
+            if ni == node: continue
+            if re.match(r"\^", ni): continue
+            g.edge(ni, node)
+    return g
+
+
+def board(tfgraph, depth=1, style=True):
     global CLUSTER_INDEX
     CLUSTER_INDEX = 0
     _node_table = node_table(tfgraph, depth=depth)
     _node_inpt_table = node_input_table(tfgraph, depth=depth)
-    g = add_nodes(_node_table)
+    g = add_nodes(_node_table, name='G', style=style)
     g = add_edges(_node_inpt_table, g)
     return g
