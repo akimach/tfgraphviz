@@ -1,5 +1,6 @@
+
 tfgraphviz
-========
+================
 
 Simple graphviz wrapper to visualize a graph like TensorBoard
 
@@ -15,7 +16,7 @@ Installation
 
 Use pip to install:
 
-.. code:: bash
+.. code-block:: bash
 
     $ pip install tfgraphviz
 
@@ -24,7 +25,7 @@ The only dependency is  Graphviz.
 Quickstart
 ----------
 
-.. code:: python
+.. code-block:: bash
 
     import tensorflow as tf
     import tfgraphviz as tfg
