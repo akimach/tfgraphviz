@@ -1,7 +1,6 @@
 # coding: utf-8
 import re
 import uuid
-import tensorflow as tf
 import graphviz as gv
 
 
