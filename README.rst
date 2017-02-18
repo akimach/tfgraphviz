@@ -36,6 +36,9 @@ Quickstart
     g = tfg.board(tf.get_default_graph())
     g.view()
 
+.. image:: https://raw.githubusercontent.com/akimach/tfgraphviz/master/img/graph.jpg
+    :align: center
+
 License
 -------
 

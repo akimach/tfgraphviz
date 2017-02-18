@@ -13,7 +13,7 @@ if os.path.exists('README.rst'):
 
 setup(
     name  = 'tfgraphviz',
-    version = '0.0.2',
+    version = '0.0.3',
     description = 'A simple graphviz wrapper to visualize a graph like TensorBoard',
     long_description = long_description,
     license = 'MIT',
@@ -22,7 +22,7 @@ setup(
     url = 'https://github.com/akimach/tfgraphviz',
     keywords = 'tensorflow tensor machine learning graphviz',
     packages = find_packages(),
-    install_requires = ['tensorflow', 'graphviz'],
+    install_requires = ['graphviz'],
     classifiers = [
       'Programming Language :: Python :: 2.7',
       'Programming Language :: Python :: 3.3',

@@ -137,11 +137,11 @@ def add_edges(node_inpt_table, g):
     return g
 
 
-def board(tfgraph, depth=1, style=True):
+def board(tfgraph, depth=1, name='G', style=True):
     global CLUSTER_INDEX
     CLUSTER_INDEX = 0
     _node_table = node_table(tfgraph, depth=depth)
     _node_inpt_table = node_input_table(tfgraph, depth=depth)
-    g = add_nodes(_node_table, name='G', style=style)
+    g = add_nodes(_node_table, name=name, style=style)
     g = add_edges(_node_inpt_table, g)
     return g
