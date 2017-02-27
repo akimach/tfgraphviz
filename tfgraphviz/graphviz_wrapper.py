@@ -153,7 +153,7 @@ def edge_label(shape):
     else: label = "%i" % shape[0]
     for s in shape[1:]:
         if s is None: label += "×?"
-        else: label += "×%i" % s
+        else: label += u"×%i" % s
     return label
 
 
