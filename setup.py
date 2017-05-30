@@ -13,14 +13,14 @@ if os.path.exists('README.rst'):
 
 setup(
     name  = 'tfgraphviz',
-    version = '0.0.5',
-    description = 'A simple graphviz wrapper to visualize a graph like TensorFlow and TensorBoard',
+    version = '0.0.6',
+    description = 'A visualization tool to show a graph like TensorFlow and TensorBoard',
     long_description = long_description,
     license = 'MIT',
     author = 'akimacho',
     author_email = 'kimura.akimasa@gmail.com',
     url = 'https://github.com/akimach/tfgraphviz',
-    keywords = 'tensorflow tensor machine learning graphviz',
+    keywords = 'tensorflow tensor machine-learning graphviz ml deep-learning neural-network',
     packages = find_packages(),
     install_requires = ['graphviz'],
     classifiers = [

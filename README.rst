@@ -2,6 +2,13 @@
 tfgraphviz
 ================
 
+.. image:: http://img.shields.io/badge/license-MIT-blue.svg?style=flat
+
+.. image:: https://img.shields.io/badge/python-2.7%2C3.3%2C3.4%2C3.5-blue.svg
+
+.. image:: https://badge.fury.io/py/tfgraphviz.svg
+    :target: https://badge.fury.io/py/tfgraphviz
+
 tfgraphviz is a module to create a TensorBoard-ish graph in the DOT language of the Graphviz. tfgraphviz provides a visualization of tensorflow graph on Jupyter Notebook without TensorBoard.
 
 Links
@@ -18,9 +25,22 @@ Use pip to install:
 
 .. code-block:: bash
 
+    $ pip install graphviz
     $ pip install tfgraphviz
 
 The only dependency is  Graphviz.
+
+macOS:
+
+.. code-block:: bash
+
+    $ brew install graphviz
+
+Ubuntu:
+
+.. code-block:: bash
+
+    $ apt-get install graphviz
 
 Quickstart
 ----------
@@ -41,9 +61,9 @@ Quickstart
 License
 -------
 
-This package is distributed under the MIT license.
+This package is distributed under the `MIT license <https://raw.githubusercontent.com/akimach/tfgraphviz/master/LICENSE>`_.
 
 Author
 -------
 
-Akimasa KIMURA
+`Akimasa KIMURA <https://github.com/akimach>`_

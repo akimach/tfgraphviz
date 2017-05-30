@@ -2,5 +2,6 @@
 from .graphviz_wrapper import board
 
 
-__version__ = '0.0.3'
-__license__ = 'MIT'
+__author__  = "akimach"
+__version__ = "0.0.6"
+__license__ = "MIT"

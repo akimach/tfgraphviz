@@ -3,40 +3,21 @@ import re
 import uuid
 import graphviz as gv
 
+from .graphviz_style import *
 
-graph_pref = {
-    'fontcolor': '#414141',
-    'style': 'rounded',
-}
 
-name_scope_graph_pref = {
-    'bgcolor': '#eeeeee',
-    'color': '#aaaaaa',
-    'penwidth': '2',
-}
-
-non_name_scope_graph_pref = {
-    'fillcolor':  'white',
-    'color': 'white',
-}
-
-node_pref = {
-    'style': 'filled',
-    'fillcolor': 'white',
-    'color': '#aaaaaa',
-    'penwidth': '2',
-    'fontcolor': '#414141',
-}
-
-edge_pref = {
-    'color': '#aaaaaa',
-    'arrowsize': '1.2',
-    'penwidth': '2.5',
-    'fontcolor': '#414141',
-}
+# index of subgraph
+CLUSTER_INDEX = 0
 
 
 def tf_digraph(name=None, name_scope=None, style=True):
+    """
+    Return graphviz.dot.Digraph with TensorBoard-like style.
+    @param  name
+    @param  name_scope
+    @param  style
+    @return graphviz.dot.Digraph object
+    """
     digraph = gv.Digraph(name=name)
     if name_scope:
         digraph.graph_attr['label'] = name_scope
@@ -53,6 +34,13 @@ def tf_digraph(name=None, name_scope=None, style=True):
 
 
 def nested_dict(dict_, keys, val):
+    """
+    Assign value to dictionary.
+    @param  dict_
+    @param  keys
+    @param  val
+    @return dictionary
+    """
     cloned = dict_.copy()
     if len(keys) == 1:
         cloned[keys[0]] = val
@@ -66,11 +54,22 @@ def nested_dict(dict_, keys, val):
 
 
 def node_abs_paths(node):
+    """
+    Return absolute node path name.
+    @param  node
+    @return string
+    """
     node_names = node.name.split('/')
     return ['/'.join(node_names[0:i+1]) for i in range(len(node_names))]
 
 
 def node_table(tfgraph, depth=1):
+    """
+    Return dictionary of node.
+    @param  tfgraph
+    @param  depth
+    @return dictionary
+    """
     table = {}
     max_depth = depth
     ops = tfgraph.get_operations()
@@ -88,9 +87,15 @@ def node_table(tfgraph, depth=1):
 
 
 def node_shape(tfnode, depth=1):
+    """
+    Return node and the children.
+    @param  tfnode
+    @param  depth
+    @return string, list
+    """
     outpt_name = tfnode.name
     if len(outpt_name.split('/')) < depth: return None
-    on = '/'.join(outpt_name.split('/')[:depth])
+    on = '/'.join(outpt_name.split('/')[:depth]) # output node
     result = re.match(r"(.*):\d*$", on)
     if not result: return None
     on = result.groups()[0]
@@ -101,6 +106,12 @@ def node_shape(tfnode, depth=1):
 
 
 def node_input_table(tfgraph, depth=1):
+    """
+    Return table of operations
+    @param  tfgraph
+    @param  depth
+    @return dictionary, table of operations
+    """
     table = {}
     inpt_op_table = {}
     inpt_op_shape_table = {}
@@ -123,11 +134,15 @@ def node_input_table(tfgraph, depth=1):
     return table, inpt_op_shape_table
 
 
-# index of subgraph
-CLUSTER_INDEX = 0
-
-
 def add_nodes(node_table, name=None, name_scope=None, style=True):
+    """
+    Add TensorFlow graph's nodes to graphviz.dot.Digraph.
+    @param  node_table
+    @param  name
+    @param  name_scope
+    @param  style
+    @return graphviz.dot.Digraph object
+    """
     global CLUSTER_INDEX
     if name:
         digraph = tf_digraph(name=name, name_scope=name_scope, style=style)
@@ -148,6 +163,11 @@ def add_nodes(node_table, name=None, name_scope=None, style=True):
 
 
 def edge_label(shape):
+    """
+    Returen texts of graph's edges.
+    @param  shape
+    @return
+    """
     if len(shape) == 0: return ''
     if shape[0] is None: label = "?"
     else: label = "%i" % shape[0]
@@ -158,6 +178,13 @@ def edge_label(shape):
 
 
 def add_edges(digraph, node_inpt_table, node_inpt_shape_table):
+    """
+    Add TensorFlow graph's edges to graphviz.dot.Digraph.
+    @param  dirgraph
+    @param  node_inpt_table
+    @param  node_inpt_shape_table
+    @return  graphviz.dot.Digraph
+    """
     for node, node_inputs in node_inpt_table.items():
         if re.match(r"\^", node): continue
         for ni in node_inputs:
@@ -172,6 +199,13 @@ def add_edges(digraph, node_inpt_table, node_inpt_shape_table):
 
 
 def board(tfgraph, depth=1, name='G', style=True):
+    """
+    Return graphviz.dot.Digraph object with TensorFlow's Graphs.
+    @param  depth
+    @param  name
+    @param  style
+    @return  graphviz.dot.Digraph
+    """
     global CLUSTER_INDEX
     CLUSTER_INDEX = 0
     _node_table = node_table(tfgraph, depth=depth)
