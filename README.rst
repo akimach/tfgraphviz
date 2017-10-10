@@ -4,7 +4,7 @@ tfgraphviz
 
 .. image:: http://img.shields.io/badge/license-MIT-blue.svg?style=flat 
 
-tfgraphviz is a module to create a TensorBoard-ish graph in the DOT language of the Graphviz. tfgraphviz provides a visualization of tensorflow graph on Jupyter Notebook without TensorBoard.
+tfgraphviz is a module to create a TensorBoard like graph in the DOT language of the Graphviz. tfgraphviz provides a visualization of tensorflow graph on Jupyter Notebook without TensorBoard.
 
 Links
 -----
