@@ -8,9 +8,7 @@ tfgraphviz
 
 .. image:: https://badge.fury.io/py/tfgraphviz.svg
    :target: https://badge.fury.io/py/tfgraphviz
-
-.. image:: https://img.shields.io/badge/python-2.7%2C3.4%2C3.5%2C3.6-blue.svg
-
+   
 tfgraphviz is a module to visualize a TensorFlow's data flow graph like TensorBoard using Graphviz. tfgraphviz enables to provide a visualization of tensorflow graph on Jupyter Notebook without TensorBoard.
 
 Links
