@@ -1,4 +1,3 @@
-
 tfgraphviz
 ================
 
@@ -8,7 +7,7 @@ tfgraphviz
 
 .. image:: https://badge.fury.io/py/tfgraphviz.svg
    :target: https://badge.fury.io/py/tfgraphviz
-   
+
 tfgraphviz is a module to visualize a TensorFlow's data flow graph like TensorBoard using Graphviz. tfgraphviz enables to provide a visualization of tensorflow graph on Jupyter Notebook without TensorBoard.
 
 Links
@@ -16,7 +15,13 @@ Links
 
 - GitHub: http://github.com/akimach/tfgraphviz
 - PyPI: https://pypi.python.org/pypi/tfgraphviz
-- Jupyter Notebook: https://nbviewer.jupyter.org/github/akimach/tfgraphviz/blob/master/examples/jupyter_sample.ipynb
+- Jupyter Notebook:
+
+  .. image:: https://mybinder.org/badge.svg
+   :target: https://mybinder.org/v2/gh/akimach/tfgraphviz/master?filepath=examples%2Fjupyter_sample.ipynb
+
+  .. image:: https://img.shields.io/badge/view%20on-nbviewer-brightgreen.svg
+   :target: https://nbviewer.jupyter.org/github/akimach/tfgraphviz/blob/master/examples/jupyter_sample.ipynb
 
 Installation
 ------------
