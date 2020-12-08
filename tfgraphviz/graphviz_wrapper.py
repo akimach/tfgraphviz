@@ -63,11 +63,12 @@ def node_abs_paths(node):
     return ['/'.join(node_names[0:i+1]) for i in range(len(node_names))]
 
 
-def node_table(tfgraph, depth=1):
+def node_table(tfgraph, depth=1, name_regex=''):
     """
     Return dictionary of node.
     @param  tfgraph
     @param  depth
+    @param  name_regex
     @return dictionary
     """
     table = {}
@@ -77,6 +78,7 @@ def node_table(tfgraph, depth=1):
         for op in ops:
             abs_paths = node_abs_paths(op)
             if depth_i >= len(abs_paths): continue
+            if name_regex and not re.match(name_regex, op.name): continue
             ps = abs_paths[:depth_i+1]
             if len(ps) == 1:
                 key = '/'.join(abs_paths[0:depth_i+1])
@@ -105,22 +107,25 @@ def node_shape(tfnode, depth=1):
         return on, tfnode.shape.as_list()
 
 
-def node_input_table(tfgraph, depth=1):
+def node_input_table(tfgraph, depth=1, name_regex=''):
     """
     Return table of operations
     @param  tfgraph
     @param  depth
+    @param  name_regex
     @return dictionary, table of operations
     """
     table = {}
     inpt_op_table = {}
     inpt_op_shape_table = {}
     for op in tfgraph.get_operations():
+        if name_regex and not re.match(name_regex, op.name): continue
         op_name = op.name.split('/')[0:depth]
         opn = '/'.join(op_name)
         if not opn in inpt_op_table:
             inpt_op_table[opn] = []
-        inpt_op_list = ['/'.join(inpt_op.split('/')[0:depth]) for inpt_op in op.node_def.input]
+        inpt_op_list = ['/'.join(inpt_op.split('/')[0:depth]) \
+            for inpt_op in op.node_def.input if not name_regex or re.match(name_regex, inpt_op)]
         inpt_op_table[opn].append(inpt_op_list)
         for output in op.outputs:
             for i in range(depth):
@@ -198,18 +203,19 @@ def add_edges(digraph, node_inpt_table, node_inpt_shape_table):
     return digraph
 
 
-def board(tfgraph, depth=1, name='G', style=True):
+def board(tfgraph, depth=1, name='G', style=True, name_regex=''):
     """
     Return graphviz.dot.Digraph object with TensorFlow's Graphs.
     @param  depth
     @param  name
     @param  style
+    @param  name_regex
     @return  graphviz.dot.Digraph
     """
     global CLUSTER_INDEX
     CLUSTER_INDEX = 0
-    _node_table = node_table(tfgraph, depth=depth)
-    _node_inpt_table, _node_inpt_shape_table = node_input_table(tfgraph, depth=depth)
+    _node_table = node_table(tfgraph, depth=depth, name_regex=name_regex)
+    _node_inpt_table, _node_inpt_shape_table = node_input_table(tfgraph, depth=depth, name_regex=name_regex)
     digraph = add_nodes(_node_table, name=name, style=style)
     digraph = add_edges(digraph, _node_inpt_table, _node_inpt_shape_table)
     return digraph
