@@ -3,6 +3,7 @@ import re
 import uuid
 import graphviz as gv
 
+from collections import defaultdict
 from .graphviz_style import *
 
 
@@ -87,6 +88,37 @@ def node_table(tfgraph, depth=1, name_regex=''):
                 table = nested_dict(table, ps, {})
     return table
 
+def attributes_table(tfgraph, attribute_selector):
+    """
+    Return dictionary of {node_name:[(attribute_name, attribute_value)]} mappings.
+    @param  tfgraph
+    @param  attribute_selector
+    @return dictionary
+    """
+    table = defaultdict(list)
+    ops = tfgraph.get_operations()
+    for op in ops:
+        attributes = []
+        if '*' in attribute_selector:
+          attributes.extend(attribute_selector.get('*'))
+        if op.type in attribute_selector:
+          attributes.extend(attribute_selector.get(op.type))
+        if op.name + '|' + op.type in attribute_selector:
+          attributes.extend(attribute_selector.get(op.name + '|' + op.type))
+        if attributes:
+          if '*' in attributes:
+            attributes = [attr.name for attr in op.op_def.attr]
+          for attr_name in attributes:
+            try:
+              attr_value = op.get_attr(attr_name)
+              if 'name' in dir(attr_value):  # NameAttrList case
+                attr_value = attr_value.name
+
+              table[op.name].append((attr_name, attr_value))
+            except ValueError:
+              pass
+
+    return table
 
 def node_shape(tfnode, depth=1):
     """
@@ -139,7 +171,7 @@ def node_input_table(tfgraph, depth=1, name_regex=''):
     return table, inpt_op_shape_table
 
 
-def add_nodes(node_table, name=None, name_scope=None, style=True):
+def add_nodes(node_table, attributes_table, name=None, name_scope=None, style=True):
     """
     Add TensorFlow graph's nodes to graphviz.dot.Digraph.
     @param  node_table
@@ -156,12 +188,16 @@ def add_nodes(node_table, name=None, name_scope=None, style=True):
     graphs = []
     for key, value in node_table.items():
         if len(value) > 0:
-            sg = add_nodes(value, name='cluster_%i' % CLUSTER_INDEX, name_scope=key.split('/')[-1], style=style)
+            sg = add_nodes(value, attributes_table, name='cluster_%i' % CLUSTER_INDEX, name_scope=key.split('/')[-1], style=style)
             sg.node(key, key.split('/')[-1])
             CLUSTER_INDEX += 1
             graphs.append(sg)
         else:
-            digraph.node(key, key.split('/')[-1])
+            label = key.split('/')[-1]
+            if key in attributes_table:
+              for (attr_name, attr_value) in attributes_table[key]:
+                label = '{}\n{}:{}'.format(label, attr_name, attr_value)
+            digraph.node(key, label)
     for tg in graphs:
         digraph.subgraph(tg)
     return digraph
@@ -203,19 +239,21 @@ def add_edges(digraph, node_inpt_table, node_inpt_shape_table):
     return digraph
 
 
-def board(tfgraph, depth=1, name='G', style=True, name_regex=''):
+def board(tfgraph, depth=1, name='G', style=True, name_regex='', attribute_selector={'StatefulPartitionedCall': ['f']}):
     """
     Return graphviz.dot.Digraph object with TensorFlow's Graphs.
     @param  depth
     @param  name
     @param  style
     @param  name_regex
+    @param attribute_selector
     @return  graphviz.dot.Digraph
     """
     global CLUSTER_INDEX
     CLUSTER_INDEX = 0
     _node_table = node_table(tfgraph, depth=depth, name_regex=name_regex)
     _node_inpt_table, _node_inpt_shape_table = node_input_table(tfgraph, depth=depth, name_regex=name_regex)
-    digraph = add_nodes(_node_table, name=name, style=style)
+    _attributes_table = attributes_table(tfgraph, attribute_selector)
+    digraph = add_nodes(_node_table, _attributes_table, name=name, style=style)
     digraph = add_edges(digraph, _node_inpt_table, _node_inpt_shape_table)
     return digraph
