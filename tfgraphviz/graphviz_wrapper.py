@@ -9,9 +9,11 @@ from .graphviz_style import *
 
 # index of subgraph
 CLUSTER_INDEX = 0
+ADD_DIGRAPH_FUNC = None
+ADD_DIGRAPH_NODE_FUNC = None
+ADD_DIGRAPH_EDGE_FUNC = None
 
-
-def tf_digraph(name=None, name_scope=None, style=True):
+def add_digraph(name=None, name_scope=None, style=True):
     """
     Return graphviz.dot.Digraph with TensorBoard-like style.
     @param  name
@@ -22,6 +24,8 @@ def tf_digraph(name=None, name_scope=None, style=True):
     digraph = gv.Digraph(name=name)
     if name_scope:
         digraph.graph_attr['label'] = name_scope
+        digraph.graph_attr['tooltip'] = name_scope
+
     if style is False: return digraph
 
     if name_scope:
@@ -32,6 +36,46 @@ def tf_digraph(name=None, name_scope=None, style=True):
     digraph.node_attr.update(node_pref)
     digraph.edge_attr.update(edge_pref)
     return digraph
+
+
+def add_digraph_node(digraph, name, op, attributes=None):
+    """
+    Adds a node to digraph.
+    @param  digraph
+    @param  name
+    @param  op
+    @param  attributes
+    """
+    label = name.split('/')[-1]
+    tooltip = name
+    # For possible attribute values see:
+    # https://graphviz.org/doc/info/attrs.html
+    if attributes is None:
+        attributes = []
+    if op is not None:
+        tooltip += ':' + op.type
+        if 'PartitionedCall' in op.type:
+            try:
+                label = '{}\n{}:{}'.format(label, 'f', op.get_attr('f').name)
+            except ValueError:
+                pass
+            # For example:
+            # attributes.append(('fillcolor', 'green'))
+    digraph.node(name, label=label, tooltip=tooltip, _attributes=attributes)
+
+
+def add_digraph_edge(digraph, from_node, to_node, label=None, attributes=None):
+    """
+    Adds an edge to digraph.
+    @param  digraph
+    @param  from_node
+    @param  to_node
+    @param  label
+    @param  attributes
+    """
+    if attributes is None:
+        attributes = []
+    digraph.edge(from_node, to_node, label=label, _attributes=attributes)
 
 
 def nested_dict(dict_, keys, val):
@@ -73,6 +117,7 @@ def node_table(tfgraph, depth=1, name_regex=''):
     @return dictionary
     """
     table = {}
+    ops_table = {}
     max_depth = depth
     ops = tfgraph.get_operations()
     for depth_i in range(max_depth):
@@ -80,45 +125,15 @@ def node_table(tfgraph, depth=1, name_regex=''):
             abs_paths = node_abs_paths(op)
             if depth_i >= len(abs_paths): continue
             if name_regex and not re.match(name_regex, op.name): continue
+            ops_table[op.name] = op
             ps = abs_paths[:depth_i+1]
             if len(ps) == 1:
                 key = '/'.join(abs_paths[0:depth_i+1])
                 if not key in table: table[key] = {}
             else:
                 table = nested_dict(table, ps, {})
-    return table
+    return table, ops_table
 
-def attributes_table(tfgraph, attribute_selector):
-    """
-    Return dictionary of {node_name:[(attribute_name, attribute_value)]} mappings.
-    @param  tfgraph
-    @param  attribute_selector
-    @return dictionary
-    """
-    table = defaultdict(list)
-    ops = tfgraph.get_operations()
-    for op in ops:
-        attributes = []
-        if '*' in attribute_selector:
-          attributes.extend(attribute_selector.get('*'))
-        if op.type in attribute_selector:
-          attributes.extend(attribute_selector.get(op.type))
-        if op.name + '|' + op.type in attribute_selector:
-          attributes.extend(attribute_selector.get(op.name + '|' + op.type))
-        if attributes:
-          if '*' in attributes:
-            attributes = [attr.name for attr in op.op_def.attr]
-          for attr_name in attributes:
-            try:
-              attr_value = op.get_attr(attr_name)
-              if 'name' in dir(attr_value):  # NameAttrList case
-                attr_value = attr_value.name
-
-              table[op.name].append((attr_name, attr_value))
-            except ValueError:
-              pass
-
-    return table
 
 def node_shape(tfnode, depth=1):
     """
@@ -171,33 +186,36 @@ def node_input_table(tfgraph, depth=1, name_regex=''):
     return table, inpt_op_shape_table
 
 
-def add_nodes(node_table, attributes_table, name=None, name_scope=None, style=True):
+def add_nodes(node_table, ops_table, name=None, name_scope=None, style=True):
     """
     Add TensorFlow graph's nodes to graphviz.dot.Digraph.
     @param  node_table
+    @param  ops_table
     @param  name
     @param  name_scope
     @param  style
     @return graphviz.dot.Digraph object
     """
     global CLUSTER_INDEX
+    global ADD_DIGRAPH_FUNC
+    global ADD_DIGRAPH_NODE_FUNC
     if name:
-        digraph = tf_digraph(name=name, name_scope=name_scope, style=style)
+        digraph = ADD_DIGRAPH_FUNC(name=name, name_scope=name_scope, style=style)
     else:
-        digraph = tf_digraph(name=str(uuid.uuid4().get_hex().upper()[0:6]), name_scope=name_scope, style=style)
+        digraph = ADD_DIGRAPH_FUNC(name=str(uuid.uuid4().get_hex().upper()[0:6]), name_scope=name_scope, style=style)
     graphs = []
     for key, value in node_table.items():
         if len(value) > 0:
-            sg = add_nodes(value, attributes_table, name='cluster_%i' % CLUSTER_INDEX, name_scope=key.split('/')[-1], style=style)
-            sg.node(key, key.split('/')[-1])
+            sg = add_nodes(value, ops_table, name='cluster_%i' % CLUSTER_INDEX, name_scope=key.split('/')[-1], style=style)
+            op = ops_table.get(key, None)
+            ADD_DIGRAPH_NODE_FUNC(sg, key, op)
             CLUSTER_INDEX += 1
             graphs.append(sg)
         else:
+            op = ops_table.get(key, None)
             label = key.split('/')[-1]
-            if key in attributes_table:
-              for (attr_name, attr_value) in attributes_table[key]:
-                label = '{}\n{}:{}'.format(label, attr_name, attr_value)
-            digraph.node(key, label)
+            ADD_DIGRAPH_NODE_FUNC(digraph, key, op)
+
     for tg in graphs:
         digraph.subgraph(tg)
     return digraph
@@ -226,34 +244,48 @@ def add_edges(digraph, node_inpt_table, node_inpt_shape_table):
     @param  node_inpt_shape_table
     @return  graphviz.dot.Digraph
     """
+    global ADD_DIGRAPH_EDGE_FUNC
     for node, node_inputs in node_inpt_table.items():
         if re.match(r"\^", node): continue
         for ni in node_inputs:
             if ni == node: continue
             if re.match(r"\^", ni): continue
             if not ni in node_inpt_shape_table:
-                digraph.edge(ni, node)
+                ADD_DIGRAPH_EDGE_FUNC(digraph, ni, node)
             else:
                 shape = node_inpt_shape_table[ni]
-                digraph.edge(ni, node, label=edge_label(shape))
+                ADD_DIGRAPH_EDGE_FUNC(digraph, ni, node, label=edge_label(shape))
     return digraph
 
 
-def board(tfgraph, depth=1, name='G', style=True, name_regex='', attribute_selector={'StatefulPartitionedCall': ['f']}):
+def board(tfgraph,
+          depth=1,
+          name='G',
+          style=True,
+          name_regex='',
+          add_digraph_func=None,
+          add_digraph_node_func=None,
+          add_digraph_edge_func=None
+         ):
     """
     Return graphviz.dot.Digraph object with TensorFlow's Graphs.
     @param  depth
     @param  name
     @param  style
     @param  name_regex
-    @param attribute_selector
     @return  graphviz.dot.Digraph
     """
+    global ADD_DIGRAPH_FUNC
+    global ADD_DIGRAPH_NODE_FUNC
+    global ADD_DIGRAPH_EDGE_FUNC
     global CLUSTER_INDEX
     CLUSTER_INDEX = 0
-    _node_table = node_table(tfgraph, depth=depth, name_regex=name_regex)
+    ADD_DIGRAPH_FUNC = add_digraph_func if add_digraph_func is not None else add_digraph
+    ADD_DIGRAPH_NODE_FUNC = add_digraph_node_func if add_digraph_node_func is not None else add_digraph_node
+    ADD_DIGRAPH_EDGE_FUNC = add_digraph_edge_func if add_digraph_edge_func is not None else add_digraph_edge
+
+    _node_table, _ops_table = node_table(tfgraph, depth=depth, name_regex=name_regex)
     _node_inpt_table, _node_inpt_shape_table = node_input_table(tfgraph, depth=depth, name_regex=name_regex)
-    _attributes_table = attributes_table(tfgraph, attribute_selector)
-    digraph = add_nodes(_node_table, _attributes_table, name=name, style=style)
+    digraph = add_nodes(_node_table, _ops_table, name=name, style=style)
     digraph = add_edges(digraph, _node_inpt_table, _node_inpt_shape_table)
     return digraph
