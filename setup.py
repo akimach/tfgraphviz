@@ -13,7 +13,7 @@ if os.path.exists('README.rst'):
 
 setup(
     name  = 'tfgraphviz',
-    version = '0.0.7',
+    version = '0.0.8',
     description = 'A visualization tool to show a graph like TensorFlow and TensorBoard',
     long_description = long_description,
     license = 'MIT',
