@@ -18,7 +18,7 @@ def jupyter_pan_and_zoom(
     @param  g: digraph object
     @param  element_styles: CSS styles for embedded SVG element.
     @param  container_styles: CSS styles for container div element.
-    @param  pan_zoom_json: pan and zoom settings, see https://github.com/ariutta/svg-pan-zoom
+    @param  pan_zoom_json: pan and zoom settings, see https://github.com/bumbu/svg-pan-zoom
     """
     svg_txt = g.pipe(format='svg').decode("utf-8")
     html_container_class_name = F"svg_container_{int(time.time())}"
@@ -32,7 +32,7 @@ def jupyter_pan_and_zoom(
                     {element_styles}
                 }}
             </style>
-            <script src="https://ariutta.github.io/svg-pan-zoom/dist/svg-pan-zoom.min.js"></script>
+            <script src="https://bumbu.me/svg-pan-zoom/dist/svg-pan-zoom.min.js"></script>
             <script type="text/javascript">
                 attempts = 5;
                 var existCondition = setInterval(function() {{
